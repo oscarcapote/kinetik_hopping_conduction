@@ -8,21 +8,20 @@ integer(8) :: NS,i,j,nn,itt,Dx,Dy
 integer(8),dimension(:,:),allocatable :: geom,coord
 integer(8),dimension(:),allocatable :: S!Vector de spins
 real(8),dimension(:,:),allocatable :: pes!Gamma_{iT}
-real(8),dimension(:),allocatable :: phi!Gamma_{iT}
+real(8),dimension(:),allocatable :: phi
 real(8) :: gamma_iT,p_c
 real(8) :: r_c!radio de cut_off
 real(8)::beta,E,M,T,E2,W,EField,P,DeltaE,h_j,time,Dt
 
 T = get_db_arg(1,2.0d0)
-d = get_int_arg(2,int(2,8))
-L = get_int_arg(3,int(3,8))
-Nitt = get_int_arg(4,int(1d6,8))
-warmSteps = get_int_arg(5,int(1d3,8))
-measureSteps = get_int_arg(6,int(1,8))
+d = 2
+L = get_int_arg(2,int(100,8))
+Nitt = get_int_arg(3,int(1000,8))
+measureSteps = get_int_arg(4,int(1,8))
 W = 1.0d0!Valor que acotara el potencial aletorio
 r_c = 10
+EField = T/10
 p_c = exp(-2.0d0*r_c)
-EField = 100.0d0
 
 !-------------------------------------------------------------------------------
 !-----------------------------Inicializacion------------------------------------
@@ -46,6 +45,7 @@ S = (/(nint(grnd()), i=1,NS)/)*2-1!Inicializamos spins (-1 o 1)
 phi = (/(grnd(), i=1,NS)/)*2*W-W!Inicializamos potencial aleatorio
 time = 0.0d0
 
+!Calculamos probabilidades de transicion
 do i = 1, NS
   do j = 1, NS
     if(i==j)then
@@ -59,12 +59,15 @@ do i = 1, NS
     pes(i,j) = exp(-2*sqrt(Dx**2.0d0+Dy**2.0d0))
   end do
   gamma_iT = sum(pes(i,:))
-  pes(i,:) = pes(i,:)/sum(pes(i,:))
+  pes(i,:) = pes(i,:)/gamma_iT
 end do
+
+!Calculamos energia y polarizacion
 call hamiltonian_polarization(S,phi,EField,coord,geom,NS,E,P)
 print*,t,E,P
 
-do itt=1,10000
+!Empezamos iteraciones
+do itt=1,Nitt
   Dt  = -log(grnd())/gamma_iT
   t = t+Dt
   call MC_step()
@@ -152,6 +155,7 @@ subroutine MC_step()
   DeltaE = DeltaE +h_j
   DeltaE = 2.0d0*(DeltaE +phi(j)-phi(i)+EField*(coord(i,1)-coord(j,1)))!-2*(coord(i,1)-coord(j,1))*EField+E2
 
+  !Metropolis
   if(DeltaE<0.0d0)then
       S(i) = -S(i)
       S(j) = -S(j)
