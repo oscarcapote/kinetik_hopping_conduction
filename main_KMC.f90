@@ -14,12 +14,12 @@ real(8) :: r_c!radio de cut_off
 real(8)::beta,E,M,T,E2,W,EField,P,DeltaE,h_j,time,Dt
 
 T = get_db_arg(1,2.0d0)
+W = get_db_arg(2,1.0d0)!Valor que acotara el potencial aletorio
+r_c = get_db_arg(3,10.0d0)
 d = 2
-L = get_int_arg(2,int(100,8))
-Nitt = get_int_arg(3,int(1000,8))
-measureSteps = get_int_arg(4,int(1,8))
-W = 1.0d0!Valor que acotara el potencial aletorio
-r_c = 10
+L = get_int_arg(4,int(100,8))
+Nitt = get_int_arg(5,int(1000,8))
+measureSteps = get_int_arg(6,int(1,8))
 EField = T/10
 p_c = exp(-2.0d0*r_c)
 
