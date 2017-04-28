@@ -22,7 +22,7 @@ Nitt = get_int_arg(5,int(1000,8))
 measureSteps = get_int_arg(6,int(1,8))
 EField = T/10
 p_c = exp(-2.0d0*r_c)
-
+print*, T,W,r_c,L,Nitt
 !-------------------------------------------------------------------------------
 !-----------------------------Inicializacion------------------------------------
 !-------------------------------------------------------------------------------
@@ -68,12 +68,15 @@ print*,t,E,P
 
 !Empezamos iteraciones
 do itt=1,Nitt
+  !Miro cuando habrá un salto
   Dt  = -log(grnd())/gamma_iT
   t = t+Dt
   call MC_step()
   E = E +DeltaE
-  P = P + 2*(coord(j,1)-coord(i,1))
-  print*,t,E,P
+  P = P - 2*(Dx)
+  if ( mod(itt,measureSteps).eq.0 ) then!Cada measureSteps mido
+    print*,t,E,P
+  end if
 enddo
 
 
@@ -129,8 +132,12 @@ subroutine MC_step()
   j = tower(pes(i,:))
   !Si esta lleno, pasamos a la siguiente iteracion
   if ( S(j)==1.or.pes(i,j).le.p_c ) then
+    DeltaE = 0.0d0
+    Dx = 0.0d0
     return
   end if
+  Dx = coord(i,1)-coord(j,1)
+  Dx = Dx-nint(dble(Dx)/dble(L))*L
 
   !Calculamos variacion de energí con cuidado que si i y j son
   !primeros vecinos en la parte interaccion de primeros vecinos
@@ -153,7 +160,7 @@ subroutine MC_step()
     h_j = h_j + S(geom(j,nn))
   end do
   DeltaE = DeltaE +h_j
-  DeltaE = 2.0d0*(DeltaE +phi(j)-phi(i)+EField*(coord(i,1)-coord(j,1)))!-2*(coord(i,1)-coord(j,1))*EField+E2
+  DeltaE = 2.0d0*(DeltaE +phi(j)-phi(i)+EField*(Dx))!-2*(coord(i,1)-coord(j,1))*EField+E2
 
   !Metropolis
   if(DeltaE<0.0d0)then
