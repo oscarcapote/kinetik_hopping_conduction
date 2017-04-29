@@ -11,7 +11,7 @@ real(8),dimension(:,:),allocatable :: pes!Gamma_{iT}
 real(8),dimension(:),allocatable :: phi
 real(8) :: gamma_iT,p_c
 real(8) :: r_c!radio de cut_off
-real(8)::beta,E,M,T,E2,W,EField,P,DeltaE,h_j,time,Dt
+real(8)::beta,E,M,T,E2,W,EField,P,DeltaE,h_j,time,Dt,P2
 
 T = get_db_arg(1,2.0d0)
 W = get_db_arg(2,1.0d0)!Valor que acotara el potencial aletorio
@@ -22,7 +22,6 @@ Nitt = get_int_arg(5,int(1000,8))
 measureSteps = get_int_arg(6,int(1,8))
 EField = T/10
 p_c = exp(-2.0d0*r_c)
-print*, T,W,r_c,L,Nitt
 !-------------------------------------------------------------------------------
 !-----------------------------Inicializacion------------------------------------
 !-------------------------------------------------------------------------------
@@ -64,18 +63,18 @@ end do
 
 !Calculamos energia y polarizacion
 call hamiltonian_polarization(S,phi,EField,coord,geom,NS,E,P)
-print*,t,E,P
+print*,time,E,P
 
 !Empezamos iteraciones
 do itt=1,Nitt
   !Miro cuando habrá un salto
   Dt  = -log(grnd())/gamma_iT
-  t = t+Dt
+  time = time+Dt
   call MC_step()
   E = E +DeltaE
   P = P - 2*(Dx)
   if ( mod(itt,measureSteps).eq.0 ) then!Cada measureSteps mido
-    print*,t,E,P
+    print*,time,E,P
   end if
 enddo
 
@@ -108,7 +107,6 @@ function tower(pes) result(mu)
   real(8),dimension(:) :: pes
   integer(8) :: mu
   real(8) :: suma,rnd
-  mu = 1
   mu = 1!Reaccio qua pasara
   rnd = grnd()
   suma =pes(mu)
@@ -163,12 +161,15 @@ subroutine MC_step()
   DeltaE = 2.0d0*(DeltaE +phi(j)-phi(i)+EField*(Dx))!-2*(coord(i,1)-coord(j,1))*EField+E2
 
   !Metropolis
-  if(DeltaE<0.0d0)then
+  if(DeltaE.le.0.0d0)then
       S(i) = -S(i)
       S(j) = -S(j)
   else if(grnd().le.exp(-beta*DeltaE))then
       S(i) = -S(i)
       S(j) = -S(j)
+  else
+    DeltaE = 0.0d0
+    DX = 0.0d0
   endif
 
 
