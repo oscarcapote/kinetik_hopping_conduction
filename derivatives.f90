@@ -2,9 +2,10 @@ program derivada
   integer(8) :: i,j,istat,nLines
   real(8), dimension(:), allocatable :: T,P,dP
   real(8):: dummy
+  character(30)::fileName
 
-
-  open(unit=100, file='EP.dat', iostat=istat)
+  call get_command_argument(1,fileName)
+  open(unit=100, file=fileName, iostat=istat)
   nLines = 0
   if ( istat /= 0 ) stop "Error opening file "
   do
@@ -15,12 +16,13 @@ program derivada
     nLines = nLines +1
   end do
   close(unit=100, iostat=istat)
-
+  !print*,fileName,nLines
+  !read(*,*)
 
   allocate(T(nLines))
   allocate(P(nLines))
   allocate(dP(nLines-2))
-  open(unit=100, file='EP.dat', iostat=istat)
+  open(unit=100, file=fileName, iostat=istat)
   if ( istat /= 0 ) stop "Error opening file "
   do i=1,nLines,1
     read(unit=100,fmt = *, iostat=istat) T(i),dummy,P(i)
