@@ -13,6 +13,7 @@ F90 = gfortran
 
 .PHONY:install
 install:main.out der.out analysis
+	@$(MAKE) clean
 
 
 main.out : $(MODULES_OBJ) $(MAIN).o
