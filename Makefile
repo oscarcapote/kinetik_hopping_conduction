@@ -1,6 +1,6 @@
 MAIN = main
 EXECS = main.out der.out
-SIZES = 50 100 200
+SIZES = 50 100 150
 RESULTS = $(patsubst %,./results/L%/,$(SIZES))
 RESULTS_MAINS = $(addsuffix main.out,$(RESULTS))
 RESULTS_DERS =  $(addsuffix der.out,$(RESULTS))
@@ -9,6 +9,10 @@ PLOTS = basic_plots.gp
 MODULES = $(wildcard ./modules/*.f90)
 MODULES_OBJ = $(patsubst ./modules/%.f90,%.o,$(MODULES))
 F90 = gfortran
+
+
+.PHONY:install
+install:main.out der.out analysis
 
 
 main.out : $(MODULES_OBJ) $(MAIN).o
@@ -44,9 +48,11 @@ der.out:derivatives.f90
 
 .PHONY:analysis
 
-analysis: main.out der.out
+analysis: main.out der.out  
 	@$(MAKE) $(RESULTS_MAINS)
 	@$(MAKE) $(RESULTS_DERS)
+	@$(MAKE) gnuplots
+	@$(MAKE) loopScript
 
 $(RESULTS_MAINS) :main.out
 	@mkdir -p $(dir $@)
@@ -57,17 +63,13 @@ $(RESULTS_DERS) :der.out
 	cp $(notdir $@) $@
 
 .PHONY:gnuplots
-gnuplots:
-	$(foreach var,$(RESULTS),cp ./scripts/basic_plots.gp $(var)$^;)
+gnuplots:./scripts/basic_plots.gp
+	$(foreach var,$(RESULTS),cp ./scripts/basic_plots.gp $(var);)
 	$(foreach var,$(SIZES),sed -i 's/SIZE/'$(var)'/g' ./results/L$(var)/basic_plots.gp;)
 
 .PHONY:loopScript
-loopScript:
-	$(foreach var,$(RESULTS),cp ./scripts/loop_T.sh $(var)$^;)
+loopScript:./scripts/loop_T.sh
+	$(foreach var,$(RESULTS),cp ./scripts/loop_T.sh $(var);)
 	$(foreach var,$(SIZES),sed -i 's/SIZE/'$(var)'/g' ./results/L$(var)/loop_T.sh;)
 
-
-.PHONY:exemple
-exemple:
-	sed 's/SIZE/$(SIZES)/g' ex.dat
 

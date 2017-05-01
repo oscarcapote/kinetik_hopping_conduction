@@ -4,7 +4,7 @@ use search_arguments
 use mtfort90
 implicit none
 integer(8):: d,L,Nitt,warmSteps,measureSteps
-integer(8) :: NS,i,j,nn,itt,Dx,Dy
+integer(8) :: NS,i,j,k,nn,itt,Dx,Dy,NS2
 integer(8),dimension(:,:),allocatable :: geom,coord
 integer(8),dimension(:),allocatable :: S!Vector de spins
 real(8),dimension(:,:),allocatable :: pes!Gamma_{iT}
@@ -20,6 +20,7 @@ d = 2
 L = get_int_arg(4,int(100,8))
 Nitt = get_int_arg(5,int(1000,8))
 measureSteps = get_int_arg(6,int(1,8))
+call sgrnd(2668)
 EField = T/10
 p_c = exp(-2.0d0*r_c)
 !-------------------------------------------------------------------------------
@@ -39,8 +40,23 @@ allocate(pes(NS,NS))
 
 call geometry_compute(geom,coord,NS,L,d)!Inicializamos geometria
 coord = coord+1
+k = 0
+j = 0
 
-S = (/(nint(grnd()), i=1,NS)/)*2-1!Inicializamos spins (-1 o 1)
+!S = (/(nint(grnd()), i=1,NS)/)*2-1!Inicializamos spins (-1 o 1)
+NS2 = NS/2
+do i=1,NS
+    if(grnd()<0.5d0)then
+        S(i) = 1
+        j = j+1
+    else
+        S(i) = -1
+        k = k+1
+    endif
+    if(j==NS2 .or. k==NS2)then
+        exit
+    endif
+enddo
 phi = (/(grnd(), i=1,NS)/)*2*W-W!Inicializamos potencial aleatorio
 time = 0.0d0
 
@@ -60,7 +76,7 @@ do i = 1, NS
   gamma_iT = sum(pes(i,:))
   pes(i,:) = pes(i,:)/gamma_iT
 end do
-
+p_c = p_c*gamma_iT
 !Calculamos energia y polarizacion
 call hamiltonian_polarization(S,phi,EField,coord,geom,NS,E,P)
 print*,time,E,P
@@ -169,7 +185,7 @@ subroutine MC_step()
       S(j) = -S(j)
   else
     DeltaE = 0.0d0
-    DX = 0.0d0
+    DX = 0
   endif
 
 
